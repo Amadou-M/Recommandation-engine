@@ -11,7 +11,7 @@ from pyspark.sql.functions import desc, coalesce, lit
 from pyspark.ml.feature import StringIndexer
 
 # ── CONFIG ─────────────────────────────────────────────────────────────
-BASE_PATH = Path("data/delta")  # corrigé
+BASE_PATH = Path("data/delta")  
 
 # ── SPARK ──────────────────────────────────────────────────────────────
 builder = SparkSession.builder \
