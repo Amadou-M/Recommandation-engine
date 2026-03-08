@@ -1,0 +1,67 @@
+version: "3.9"
+
+services:
+
+  # ── REDIS ──────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: redis-reco
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── API FASTAPI ────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: reco-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data/delta:/app/data/delta:ro
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── DASHBOARD STREAMLIT ────────────────────────────────────────────
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    container_name: reco-dashboard
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://api:8000
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # ── MLFLOW UI ──────────────────────────────────────────────────────
+  mlflow:
+    image: python:3.11-slim
+    container_name: reco-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlruns
+    command: >
+      sh -c "pip install mlflow -q &&
+             mlflow ui --host 0.0.0.0 --port 5000 --backend-store-uri /mlruns"
+    restart: unless-stopped
+
+volumes:
+  redis_data:

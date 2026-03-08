@@ -1,0 +1,15 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir \
+    streamlit==1.32.0 \
+    requests==2.31.0 \
+    plotly==5.19.0 \
+    pandas==2.2.0
+
+COPY src/dashboard/ ./src/dashboard/
+
+EXPOSE 8501
+CMD ["streamlit", "run", "src/dashboard/app.py", \
+     "--server.address=0.0.0.0", "--server.port=8501"]
